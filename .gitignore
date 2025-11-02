@@ -1,0 +1,51 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.backup
+*.backup*
+*_old*
+.borg-env
+.borg-passphrase
+.mcp-env
+caddy-root.crt
+*.key
+*.pem
+
+# Data & Logs
+data/
+*.log
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+.Python
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+.claude.json
+.claude.json.backup
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.tmp
+docker-compose.tmp
+
+# Temporary
+/tmp/
+*.sqlite-journal
