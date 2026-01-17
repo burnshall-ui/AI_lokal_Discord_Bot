@@ -22,7 +22,7 @@ OLLAMA_CHAT_URL = f"{OLLAMA_BASE}/api/chat"
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
 COMMAND_PREFIX = os.getenv('COMMAND_PREFIX', '!')
 
-# Bot Setup
+# Bot setup
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
@@ -37,7 +37,7 @@ MAX_HISTORY = 10
 rag = get_rag_system()
 esi = get_esi_client()
 
-SYSTEM_PROMPT = """Du bist Nostromo AI, ein spezialisierter KI-Assistent für EVE Online Spieler. 
+SYSTEM_PROMPT = """Du bist ein spezialisierter KI-Assistent für EVE Online Spieler.
 Du hilfst bei allen Fragen zu EVE Online, nutzt deine Wissensdatenbank und Echtzeit-Daten für präzise Antworten.
 
 Wichtig:
@@ -75,14 +75,14 @@ async def handle_ai_message(message):
             
             clean_content = message.content.replace(f'<@{bot.user.id}>', '').strip()
             
-            # RAG: Hole relevanten Context
+            # RAG: fetch relevant context
             rag_context = rag.search_knowledge(clean_content)
             logger.info(f"RAG Query: '{clean_content}' -> {len(rag_context)} Ergebnisse")
 
-            # Build Messages für LLM
+            # Build messages for LLM
             messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-            # Context hinzufügen wenn vorhanden
+            # Add context if available
             if rag_context:
                 # Format RAG results properly
                 context_texts = []
@@ -97,14 +97,14 @@ Nutze die obigen Informationen aus der EVE Knowledge Base für deine Antwort."""
                 messages.append({"role": "system", "content": context_msg})
                 logger.info(f"RAG Context hinzugefügt: {len(rag_context)} Dokumente")
             
-            # Conversation History
+            # Conversation history
             for msg in conversation_history[user_id][-5:]:
                 messages.append(msg)
             
-            # User Message
+            # User message
             messages.append({"role": "user", "content": clean_content})
             
-            # LLM Call mit optimierten Parametern für Fakten-Modus
+            # LLM call with optimized parameters for fact mode
             payload = {
                 "model": OLLAMA_MODEL,
                 "messages": messages,
@@ -128,12 +128,12 @@ Nutze die obigen Informationen aus der EVE Knowledge Base für deine Antwort."""
                         data = await resp.json()
                         ai_response = data.get('message', {}).get('content', 'Keine Antwort.')
                         
-                        # History updaten
+                        # Update history
                         conversation_history[user_id].append({"role": "user", "content": clean_content})
                         conversation_history[user_id].append({"role": "assistant", "content": ai_response})
                         conversation_history[user_id] = conversation_history[user_id][-MAX_HISTORY:]
                         
-                        # Discord Limit
+                        # Discord limit
                         if len(ai_response) > 2000:
                             ai_response = ai_response[:1997] + "..."
                         
@@ -206,7 +206,7 @@ async def status_command(ctx):
 
 @bot.command(name='rag')
 async def rag_command(ctx):
-    """Zeigt RAG System Stats"""
+    """Shows RAG system stats."""
     stats = rag.get_stats()
 
     embed = discord.Embed(title="🧠 RAG System", color=discord.Color.purple())
@@ -220,7 +220,7 @@ async def rag_command(ctx):
 
 @bot.command(name='rag-reload')
 async def rag_reload_command(ctx):
-    """Versucht ChromaDB neu zu verbinden"""
+    """Attempts to reconnect to ChromaDB."""
     async with ctx.typing():
         success = rag.reconnect()
         if success:
@@ -254,32 +254,32 @@ async def model_command(ctx, model_name: str = None):
 
 @bot.command(name='price')
 async def price_command(ctx, *, item_name: str):
-    """Zeigt Marktpreis für ein Item in Jita"""
+    """Shows market price for an item in Jita."""
     async with ctx.typing():
         try:
-            # Suche Item
+            # Search item
             types = esi.search_type(item_name)
             if not types:
                 await ctx.send(f"❌ Item '{item_name}' nicht gefunden")
                 return
             
-            # Erstes Match nehmen
+            # Use first match
             item = types[0]
             type_id = item['type_id']
             
-            # Marktpreise holen
+            # Fetch market prices
             prices = esi.get_market_prices(type_id)
             if not prices:
                 await ctx.send(f"❌ Keine Marktdaten für '{item['name']}'")
                 return
             
-            # Embed erstellen
+            # Build embed
             embed = discord.Embed(
                 title=f"💰 {item['name']}", 
                 color=discord.Color.gold()
             )
             
-            # Preise formatieren
+            # Format prices
             buy_max = f"{prices['buy_max']:,.2f} ISK" if prices['buy_max'] > 0 else "N/A"
             sell_min = f"{prices['sell_min']:,.2f} ISK" if prices['sell_min'] > 0 else "N/A"
             
@@ -301,10 +301,10 @@ async def price_command(ctx, *, item_name: str):
 
 @bot.command(name='ship')
 async def ship_command(ctx, *, ship_name: str):
-    """Zeigt Info über ein Schiff"""
+    """Shows info about a ship."""
     async with ctx.typing():
         try:
-            # Suche Schiff
+            # Search ship
             types = esi.search_type(ship_name)
             if not types:
                 await ctx.send(f"❌ Schiff '{ship_name}' nicht gefunden")
@@ -318,7 +318,7 @@ async def ship_command(ctx, *, ship_name: str):
                 color=discord.Color.blue()
             )
             
-            # Stats aus ESI
+            # Stats from ESI
             if 'mass' in ship:
                 embed.add_field(name="Masse", value=f"{ship['mass']:,} kg", inline=True)
             if 'volume' in ship:
@@ -337,7 +337,7 @@ async def ship_command(ctx, *, ship_name: str):
 
 @bot.command(name='server')
 async def server_command(ctx):
-    """Zeigt EVE Server Status"""
+    """Shows EVE server status."""
     async with ctx.typing():
         try:
             status = esi.get_server_status()
@@ -376,7 +376,7 @@ async def server_command(ctx):
 
 
 if __name__ == '__main__':
-    if not TOKEN:
+    if not TOKEN or TOKEN.strip() == "your_discord_bot_token_here":
         logger.error('❌ DISCORD_BOT_TOKEN fehlt!')
         exit(1)
     
