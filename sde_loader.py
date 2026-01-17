@@ -1,6 +1,6 @@
 """
-EVE SDE (Static Data Export) Loader
-Lädt Schiffs-, Modul- und Item-Daten aus SQLite in ChromaDB
+EVE SDE (Static Data Export) loader.
+Loads ship, module, and item data from SQLite into ChromaDB.
 """
 
 import sqlite3
@@ -19,7 +19,7 @@ class SDELoader:
         self.conn = None
 
     def connect(self):
-        """Verbindet zur SDE SQLite Datenbank"""
+        """Connects to the SDE SQLite database."""
         try:
             self.conn = sqlite3.connect(self.db_path)
             self.conn.row_factory = sqlite3.Row
@@ -30,7 +30,7 @@ class SDELoader:
             return False
 
     def get_ship_types(self, limit: int = 100) -> List[Dict]:
-        """Holt Schiffstypen aus der SDE"""
+        """Fetches ship types from the SDE."""
         if not self.conn:
             return []
 
@@ -64,7 +64,7 @@ class SDELoader:
         return ships
 
     def get_module_types(self, limit: int = 200) -> List[Dict]:
-        """Holt Module/Items aus der SDE"""
+        """Fetches modules/items from the SDE."""
         if not self.conn:
             return []
 
@@ -97,7 +97,7 @@ class SDELoader:
         return modules
 
     def format_ship_for_rag(self, ship: Dict) -> str:
-        """Formatiert Schiffsdaten für RAG"""
+        """Formats ship data for RAG."""
         text = f"""
 SCHIFF: {ship['typeName']}
 Typ-ID: {ship['typeID']}
@@ -115,7 +115,7 @@ Quelle: EVE SDE (Static Data Export)
         return text.strip()
 
     def format_module_for_rag(self, module: Dict) -> str:
-        """Formatiert Modul-Daten für RAG"""
+        """Formats module data for RAG."""
         text = f"""
 ITEM: {module['typeName']}
 Typ-ID: {module['typeID']}
@@ -132,7 +132,7 @@ Quelle: EVE SDE (Static Data Export)
         return text.strip()
 
     def load_ships_to_chromadb(self, limit: int = 100) -> int:
-        """Lädt Schiffe in ChromaDB"""
+        """Loads ships into ChromaDB."""
         ships = self.get_ship_types(limit)
         loaded = 0
 
@@ -154,7 +154,7 @@ Quelle: EVE SDE (Static Data Export)
         return loaded
 
     def load_modules_to_chromadb(self, limit: int = 200) -> int:
-        """Lädt Module in ChromaDB"""
+        """Loads modules into ChromaDB."""
         modules = self.get_module_types(limit)
         loaded = 0
 
@@ -176,7 +176,7 @@ Quelle: EVE SDE (Static Data Export)
         return loaded
 
     def load_all(self, ships_limit: int = 100, modules_limit: int = 200):
-        """Lädt alle SDE Daten in ChromaDB"""
+        """Loads all SDE data into ChromaDB."""
         if not self.connect():
             logger.error("❌ Kann SDE DB nicht öffnen")
             return False
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print()
 
-    # Lädt Top 100 Schiffe + Top 200 Module
+    # Loads top 100 ships + top 200 modules
     success = loader.load_all(ships_limit=100, modules_limit=200)
 
     if success:

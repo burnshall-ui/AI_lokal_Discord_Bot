@@ -1,5 +1,5 @@
 """
-RAG System für EVE Online Knowledge Base
+RAG system for the EVE Online knowledge base.
 """
 import os
 import logging
@@ -33,9 +33,9 @@ class EVERAGSystem:
             logger.warning("ChromaDB package nicht installiert")
             return
 
-        # Retry-Logik für ChromaDB Connection
+        # Retry logic for the ChromaDB connection
         max_retries = 5
-        retry_delay = 2  # Sekunden
+        retry_delay = 2  # seconds
 
         for attempt in range(max_retries):
             try:
@@ -50,13 +50,13 @@ class EVERAGSystem:
                 self.client.heartbeat()
                 logger.info(f"✅ ChromaDB verbunden: {self.chromadb_host}:{self.chromadb_port}")
 
-                # Collection erstellen oder laden
+                # Create or load collection
                 try:
                     self.collection = self.client.get_collection(name=self.collection_name)
                     count = self.collection.count()
                     logger.info(f"✅ Collection '{self.collection_name}' geladen: {count} Dokumente")
                 except ValueError:
-                    # Collection existiert nicht, erstelle sie
+                    # Collection does not exist, create it
                     logger.info(f"Collection '{self.collection_name}' existiert nicht, erstelle neu...")
                     self.collection = self.client.create_collection(
                         name=self.collection_name,
@@ -64,7 +64,7 @@ class EVERAGSystem:
                     )
                     logger.info(f"✅ Collection '{self.collection_name}' erstellt (leer)")
 
-                # Erfolgreich verbunden
+                # Connected successfully
                 break
 
             except Exception as e:
@@ -168,7 +168,7 @@ class EVERAGSystem:
             return {"status": "error", "message": str(e)}
 
     def reconnect(self) -> bool:
-        """Versucht ChromaDB neu zu verbinden"""
+        """Attempts to reconnect to ChromaDB."""
         logger.info("Manueller Reconnect zu ChromaDB gestartet...")
         self.__init__()  # Re-initialize
         return self.client is not None and self.collection is not None

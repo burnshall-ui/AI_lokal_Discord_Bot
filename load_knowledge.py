@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-EVE Knowledge Base Loader - Master Script
-Kombiniert SDE und Wiki-Daten für ChromaDB
+EVE knowledge base loader - master script.
+Combines SDE and wiki data for ChromaDB.
 """
 
 import sys
@@ -17,7 +17,7 @@ logger = logging.getLogger("KnowledgeLoader")
 
 
 def load_wiki_only(limit: int = None):
-    """Lädt nur Wiki-Artikel"""
+    """Loads only wiki articles."""
     from wiki_scraper import EVEWikiScraper
 
     scraper = EVEWikiScraper()
@@ -34,12 +34,12 @@ def load_wiki_only(limit: int = None):
 
 
 def load_sde_only(ships: int = 100, modules: int = 200):
-    """Lädt nur SDE-Daten"""
+    """Loads only SDE data."""
     from sde_loader import SDELoader
 
     loader = SDELoader()
 
-    # Check ob SDE DB existiert
+    # Check whether the SDE DB exists
     if not Path(loader.db_path).exists():
         logger.error(f"❌ SDE Datenbank nicht gefunden: {loader.db_path}")
         logger.info("💡 Download: https://www.fuzzwork.co.uk/dump/sqlite-latest.sqlite.bz2")
@@ -54,16 +54,16 @@ def load_sde_only(ships: int = 100, modules: int = 200):
 
 
 def load_both(wiki_limit: int = None, ships: int = 100, modules: int = 200):
-    """Lädt Wiki UND SDE"""
+    """Loads wiki and SDE data."""
     logger.info("🚀 FULL KNOWLEDGE BASE LOAD")
     logger.info("=" * 60)
 
-    # 1. Wiki (schneller, keine Dependencies)
+    # 1. Wiki (faster, no dependencies)
     logger.info("\n📚 PHASE 1: Wiki-Artikel")
     logger.info("-" * 60)
     wiki_loaded = load_wiki_only(limit=wiki_limit)
 
-    # 2. SDE (braucht DB-File)
+    # 2. SDE (requires DB file)
     logger.info("\n📦 PHASE 2: SDE-Daten")
     logger.info("-" * 60)
     sde_success = load_sde_only(ships=ships, modules=modules)
@@ -128,7 +128,7 @@ Beispiele:
 
     args = parser.parse_args()
 
-    # Default wenn keine Option gewählt
+    # Default if no option is selected
     if not (args.wiki_only or args.sde_only or args.both):
         parser.print_help()
         print("\n⚠️  Keine Option gewählt!")

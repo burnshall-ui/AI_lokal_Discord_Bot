@@ -1,6 +1,6 @@
 """
-EVE Knowledge Loader
-Lädt initiale EVE Online Daten in die ChromaDB
+EVE knowledge loader.
+Loads initial EVE Online data into ChromaDB.
 """
 
 import os
@@ -14,11 +14,11 @@ logger = logging.getLogger('KnowledgeLoader')
 
 
 # ===== INITIAL KNOWLEDGE BASE =====
-# Diese Daten werden beim ersten Start geladen
-# TODO: Später durch Wiki Scraper & SDE Parser erweitern
+# This data is loaded on the first start
+# TODO: Expand later with wiki scraper & SDE parser
 
 INITIAL_DOCUMENTS = [
-    # === SCHIFFE ===
+    # === SHIPS ===
     {
         'id': 'ship_astero',
         'text': '''Der Astero ist eine Sisters of EVE (SoE) Faction Exploration Frigate. 
@@ -206,19 +206,19 @@ INITIAL_DOCUMENTS = [
 
 
 def load_initial_knowledge(force: bool = False) -> bool:
-    """Lädt initiale Knowledge Base"""
+    """Loads the initial knowledge base."""
     logger.info("Lade initiale EVE Online Knowledge Base...")
     
     rag = get_rag_system()
     
-    # Check ob schon Daten vorhanden
+    # Check if data already exists
     stats = rag.get_stats()
     if stats.get('documents', 0) > 0 and not force:
         logger.info(f"Knowledge Base hat bereits {stats['documents']} Dokumente")
         logger.info("Nutze --force um neu zu laden")
         return True
     
-    # Dokumente hinzufügen
+    # Add documents
     success = rag.add_documents(INITIAL_DOCUMENTS)
     
     if success:
@@ -232,7 +232,7 @@ def load_initial_knowledge(force: bool = False) -> bool:
 
 
 def add_custom_document(text: str, doc_id: str, category: str, title: str):
-    """Fügt ein Custom Dokument zur Knowledge Base hinzu"""
+    """Adds a custom document to the knowledge base."""
     rag = get_rag_system()
     
     doc = {

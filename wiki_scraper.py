@@ -1,6 +1,6 @@
 """
-EVE University Wiki Scraper
-Lädt wichtige Wiki-Artikel und bereitet sie für ChromaDB auf
+EVE University wiki scraper.
+Loads key wiki articles and prepares them for ChromaDB.
 """
 
 import requests
@@ -24,15 +24,15 @@ class EVEWikiScraper:
             'User-Agent': 'EVE-Discord-Bot/1.0 (Educational Purpose)'
         })
 
-    # Top EVE Uni Wiki Artikel - kuratierte Liste
+    # Top EVE Uni wiki articles - curated list
     TOP_ARTICLES = [
-        # Schiffe
+        # Ships
         "Frigates", "Destroyers", "Cruisers", "Battlecruisers", "Battleships",
         "Interceptors", "Assault_Frigates", "Stealth_Bombers",
-        "Astero", "Stratios", "Nestor",  # SOE Ships
-        "Pacifier", "Enforcer", "Marshal",  # Concord Ships
+        "Astero", "Stratios", "Nestor",  # SOE ships
+        "Pacifier", "Enforcer", "Marshal",  # Concord ships
 
-        # Game Mechanics
+        # Game mechanics
         "Fitting", "Capacitor", "Shield_tanking", "Armor_tanking",
         "Damage_types", "Electronic_warfare", "Targeting",
         "Navigation", "Warp_drive_operation",
@@ -54,13 +54,13 @@ class EVEWikiScraper:
         "Skills_and_learning", "Skill_training", "Implants",
         "Neural_remapping",
 
-        # New Player
+        # New player
         "New_player_guide", "Career_Agents", "ISK_making_guide",
         "Ship_naming_guide", "Overview_guide"
     ]
 
     def get_article_content(self, title: str) -> Optional[Dict]:
-        """Holt einen Wiki-Artikel via API"""
+        """Fetches a wiki article via API."""
         params = {
             'action': 'query',
             'titles': title,
@@ -95,19 +95,19 @@ class EVEWikiScraper:
             return None
 
     def clean_content(self, content: str, max_length: int = 4000) -> str:
-        """Bereinigt und kürzt Wiki-Content"""
-        # Entferne mehrfache Leerzeilen
+        """Cleans and truncates wiki content."""
+        # Remove extra blank lines
         lines = [line.strip() for line in content.split('\n') if line.strip()]
         content = '\n'.join(lines)
 
-        # Kürze wenn zu lang (für besseres RAG)
+        # Truncate if too long (for better RAG)
         if len(content) > max_length:
             content = content[:max_length] + "\n\n[...gekürzt, siehe Wiki für vollständigen Artikel...]"
 
         return content
 
     def format_for_rag(self, article: Dict) -> str:
-        """Formatiert Wiki-Artikel für RAG"""
+        """Formats a wiki article for RAG."""
         text = f"""
 EVE WIKI: {article['title']}
 
@@ -120,7 +120,7 @@ Kategorie: Game Guide / Tutorial
         return text.strip()
 
     def load_article_to_chromadb(self, title: str) -> bool:
-        """Lädt einen Artikel in ChromaDB"""
+        """Loads a single article into ChromaDB."""
         article = self.get_article_content(title)
 
         if not article or not article['content']:
@@ -146,7 +146,7 @@ Kategorie: Game Guide / Tutorial
         return success
 
     def load_all(self, article_list: Optional[List[str]] = None, delay: float = 1.0):
-        """Lädt mehrere Artikel in ChromaDB"""
+        """Loads multiple articles into ChromaDB."""
         if article_list is None:
             article_list = self.TOP_ARTICLES
 
@@ -163,7 +163,7 @@ Kategorie: Game Guide / Tutorial
             else:
                 failed += 1
 
-            # Sei nett zum Server
+            # Be nice to the server
             if i < len(article_list):
                 time.sleep(delay)
 

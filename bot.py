@@ -45,7 +45,7 @@ Wichtig:
 - Gib konkrete, hilfreiche Antworten mit EVE-Terminologie
 - Wenn du Live-Daten (Preise, Status) hast, nutze sie
 - Sei freundlich aber präzise
-- Antworte auf Deutsch"""
+- Antworte auf English"""
 
 
 @bot.event
