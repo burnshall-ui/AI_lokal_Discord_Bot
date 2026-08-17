@@ -93,11 +93,35 @@ ollama pull llama3.1:8b
 ollama pull nomic-embed-text
 ```
 
+Ollama runs on the host while the bot runs in a container, so Ollama has to be
+reachable from the Docker bridge. By default it listens on `127.0.0.1` only,
+which the container cannot reach.
+
+Bind it to the bridge gateway — **not** to `0.0.0.0`, which would expose your
+local LLM to every interface on the machine:
+
+```bash
+# Find the bridge address (usually 172.17.0.1)
+ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+
+# systemd: create /etc/systemd/system/ollama.service.d/override.conf
+[Service]
+Environment="OLLAMA_HOST=172.17.0.1:11434"
+```
+
+Then `sudo systemctl daemon-reload && sudo systemctl restart ollama`. If your
+bridge address differs, use yours. Whatever address you pick, make sure your
+firewall does not expose port 11434 to the outside — Ollama has no
+authentication of its own.
+
 ### 3. Configure Environment
 
 ```bash
 # Copy example config
 cp .env.example .env
+
+# Generate a Redis password (required — compose will not start without it)
+echo "REDIS_PASSWORD=$(openssl rand -base64 32)" >> .env
 
 # Edit .env and add your Discord Bot Token
 nano .env
@@ -175,14 +199,26 @@ All configuration is done via `.env` file. See `.env.example` for template.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `DISCORD_BOT_TOKEN` | Your Discord bot token | Required |
-| `OLLAMA_BASE` | Ollama API endpoint | `http://localhost:11434` |
+| `OLLAMA_BASE` | Ollama API endpoint on the host | `http://host.docker.internal:11434` |
 | `OLLAMA_MODEL` | LLM model for chat | `llama3.1:8b` |
 | `OLLAMA_EMBEDDING_MODEL` | Model for embeddings | `nomic-embed-text` |
-| `CHROMADB_HOST` | ChromaDB host | `localhost` |
+| `CHROMADB_HOST` | ChromaDB service name | `eve-chromadb` |
 | `CHROMADB_PORT` | ChromaDB port | `8000` |
-| `REDIS_HOST` | Redis host | `localhost` |
+| `REDIS_HOST` | Redis service name | `eve-redis` |
 | `REDIS_PORT` | Redis port | `6379` |
+| `REDIS_PASSWORD` | Redis password | Required |
 | `COMMAND_PREFIX` | Bot command prefix | `!` |
+
+### A note on network exposure
+
+Redis and ChromaDB run on a private compose network and publish **no** ports to
+the host. Nothing outside the compose project can reach them, so the knowledge
+base and the ESI cache are not readable by anyone who can reach the machine.
+
+If you add `ports:` entries to either service to poke at them from outside, be
+aware of what you are doing: ChromaDB in this setup has no authentication at
+all, and binding it to `0.0.0.0` on a public host hands over the entire
+knowledge base. Prefer `docker compose exec` for debugging.
 
 ---
 
