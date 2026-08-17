@@ -15,10 +15,13 @@ class ESIClient:
         self.user_agent = os.getenv("ESI_USER_AGENT", "EVE-Discord-Bot/1.0")
         self.cache_ttl = int(os.getenv("ESI_CACHE_TTL", "300"))
         try:
-            self.redis_client = redis.Redis(host=os.getenv("REDIS_HOST", "localhost"), port=int(os.getenv("REDIS_PORT", "6379")), db=0, decode_responses=True)
+            self.redis_client = redis.Redis(host=os.getenv("REDIS_HOST", "localhost"), port=int(os.getenv("REDIS_PORT", "6379")), password=os.getenv("REDIS_PASSWORD") or None, db=0, decode_responses=True)
             self.redis_client.ping()
             logger.info("Redis verbunden")
-        except:
+        except Exception as e:
+            # Falling back to the in-memory cache is fine, but a wrong password
+            # looks exactly like Redis being absent — so say which it was.
+            logger.warning("Redis nicht verfügbar (%s), nutze In-Memory-Cache", e)
             self.redis_client = None
         self.memory_cache = TTLCache(maxsize=1000, ttl=self.cache_ttl)
         self.session = requests.Session()

@@ -1,17 +1,40 @@
+# Redis and ChromaDB hold cached ESI data and the whole knowledge base, and
+# neither ships with authentication enabled by default. They used to run with
+# network_mode: "host", which puts them on every host interface — on a VPS
+# without a tight firewall that means anyone who can reach the box can read and
+# write both of them.
+#
+# They now live on a private bridge network with no published ports, reachable
+# only by other services in this file. Redis additionally requires a password,
+# so a mistake in the network setup is not immediately fatal.
+#
+# Ollama is the exception: it runs on the host, not in a container, so the bot
+# reaches it through the Docker bridge gateway. That needs one host-side setting,
+# documented in the README: Ollama must listen on the bridge, not only on
+# 127.0.0.1.
+
 services:
   eve-redis:
     image: redis:7-alpine
     container_name: eve-redis
-    network_mode: "host"
     restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"]
+    networks:
+      - eve-net
     volumes:
       - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   eve-chromadb:
     image: chromadb/chroma:0.4.24
     container_name: eve-chromadb
-    network_mode: "host"
     restart: unless-stopped
+    networks:
+      - eve-net
     volumes:
       - ./data/chromadb:/chroma/chroma
     environment:
@@ -21,20 +44,31 @@ services:
   eve-discord-bot:
     build: .
     container_name: eve-discord-bot
-    network_mode: "host"
     restart: unless-stopped
+    networks:
+      - eve-net
+    # Lets the container resolve the host, where Ollama runs.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
     environment:
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-      - OLLAMA_BASE=http://localhost:11434
-      - CHROMADB_HOST=localhost
+      - OLLAMA_BASE=http://host.docker.internal:11434
+      - CHROMADB_HOST=eve-chromadb
       - CHROMADB_PORT=8000
-      - REDIS_HOST=localhost
+      - REDIS_HOST=eve-redis
       - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
     depends_on:
-      - eve-redis
-      - eve-chromadb
+      eve-redis:
+        condition: service_healthy
+      eve-chromadb:
+        condition: service_started
     volumes:
       - ./logs:/app/logs
       - ./data:/app/data
+
+networks:
+  eve-net:
+    driver: bridge
