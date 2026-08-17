@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  compose:
+    name: Compose and isolation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install pyyaml
+
+      # Guards the security property, not just the syntax: no service may take
+      # network_mode: host or publish a port, and Redis must keep its password.
+      - name: Container isolation
+        run: python scripts/check_isolation.py
+
+      - name: Compose file is valid
+        run: |
+          printf 'DISCORD_BOT_TOKEN=ci-dummy\nREDIS_PASSWORD=ci-dummy\n' > .env
+          docker compose config -q
+
+      # REDIS_PASSWORD is declared with `:?` precisely so the stack refuses to
+      # start without it. If that guard is ever dropped, this step goes green
+      # when it should not — so assert the failure explicitly.
+      - name: Missing REDIS_PASSWORD is rejected
+        run: |
+          printf 'DISCORD_BOT_TOKEN=ci-dummy\n' > .env
+          if docker compose config -q 2>/dev/null; then
+            echo "::error::compose accepted a config without REDIS_PASSWORD"
+            exit 1
+          fi
+          echo "Correctly rejected."
+
+  python:
+    name: Python sources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Byte-compile
+        run: python -m compileall -q .
+
+  image:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the bot image
+        run: docker build -t eve-discord-bot:ci .
